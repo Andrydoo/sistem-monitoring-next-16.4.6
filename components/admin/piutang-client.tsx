@@ -17,7 +17,6 @@ import {
 import { toast } from "sonner";
 import { reassignPetugasAction } from "@/app/admin/actions";
 import { formatDaya, formatRupiah, formatTanggalWib } from "@/lib/format";
-import { ExportPiutangButton } from "@/components/shared/export-piutang-button";
 import { PiutangDetailDialog } from "@/components/shared/piutang-detail-dialog";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
@@ -474,12 +473,10 @@ export function AdminPiutangClient({
             </span>
           </div>
 
-          <ExportPiutangButton
-            periode={filters.periode}
-            petugas={filters.petugas}
-            status={filters.status}
-            q={filters.q}
-          />
+          <span className="font-mono text-[11px] text-slate-500 tabular-nums">
+            Halaman {pagination.currentPage} dari{" "}
+            {Math.max(1, pagination.totalPages)}
+          </span>
         </div>
 
         <div className="max-h-[620px] overflow-auto">

@@ -627,6 +627,7 @@ export function FormKunjunganClient({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setFormError(null);
 
     if (isCompressing) {
@@ -772,103 +773,73 @@ export function FormKunjunganClient({
   const showFormSection = !isPiutangLocked || editingPenagihanId !== null;
 
   return (
-    <div className={cn("space-y-4", showFormSection && "pb-36")}>
-      {/* Navigasi Kembali */}
-      <div>
-        <Link
-          href="/petugas"
-          className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-900 shadow-xs hover:bg-slate-50"
-        >
-          <ArrowLeft className="h-4 w-4 text-slate-700" strokeWidth={1.75} />
-          <span>Kembali ke Daftar Tugas</span>
-        </Link>
-      </div>
+    <div className={cn("space-y-4", showFormSection && "pb-36 lg:pb-8")}>
+      {/* Header & Breadcrumb Navigasi Kembali */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/petugas"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-900 shadow-xs transition-colors hover:bg-slate-50 lg:h-9 lg:min-h-9"
+          >
+            <ArrowLeft className="h-4 w-4 text-slate-700" strokeWidth={1.75} />
+            <span>Kembali ke Daftar Tugas</span>
+          </Link>
 
-      {/* Panel Detail Pelanggan */}
-      <section
-        aria-label="Detail Pelanggan Piutang"
-        className="rounded-md border border-slate-200 bg-white p-4 shadow-xs"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm font-bold text-slate-900 tabular-nums">
-                {piutang.idPelanggan}
-              </span>
-              <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-xs font-medium text-slate-700 tabular-nums">
-                Periode {piutang.periode}
-              </span>
-            </div>
-            <h1 className="mt-1 text-base font-bold text-slate-900">
+          <nav
+            aria-label="Breadcrumb"
+            className="hidden items-center gap-2 text-xs text-slate-500 lg:flex"
+          >
+            <Link href="/petugas" className="hover:text-slate-900">
+              Daftar Tugas Saya
+            </Link>
+            <span>/</span>
+            <span className="font-mono font-semibold text-slate-800 tabular-nums">
+              {piutang.idPelanggan}
+            </span>
+            <span>•</span>
+            <span className="truncate font-medium text-slate-700">
               {piutang.pelanggan.namaPelanggan}
-            </h1>
-          </div>
+            </span>
+          </nav>
+        </div>
+
+        <div className="hidden items-center gap-2 lg:flex">
+          <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 font-mono text-xs font-semibold text-slate-700 tabular-nums">
+            Periode {piutang.periode}
+          </span>
           <StatusBadge status={piutang.statusRekonsiliasi} />
         </div>
+      </div>
 
-        <div className="mt-3 flex items-start gap-2 text-xs text-slate-700">
-          <MapPin
-            className="mt-0.5 h-4 w-4 shrink-0 text-slate-600"
-            strokeWidth={1.75}
-          />
-          <p className="leading-relaxed">{piutang.pelanggan.alamat}</p>
-        </div>
+      {/* Workspace Adaptif: 1 Kolom Mobile (Detail -> Form -> Riwayat) | 2 Kolom Enterprise Desktop */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+        {/* Kolom Kiri Desktop (order-2 di Mobile, col-span-7 di Desktop): Banner Read-Only & Form Kunjungan */}
+        <div className="order-2 space-y-4 lg:order-1 lg:col-span-7">
+          {/* Banner Read-Only jika Piutang Sudah Lunas Resmi */}
+          {isPiutangLocked && editingPenagihanId === null && (
+            <Alert className="rounded-md border-emerald-200 bg-emerald-50 text-emerald-950">
+              <CheckCircle2
+                className="h-4 w-4 text-emerald-700"
+                strokeWidth={1.75}
+              />
+              <AlertTitle className="text-xs font-semibold tracking-wide text-emerald-900 uppercase">
+                Piutang Sudah Terverifikasi ({piutang.statusRekonsiliasi})
+              </AlertTitle>
+              <AlertDescription className="text-xs text-emerald-900">
+                Status piutang pelanggan ini telah berstatus Lunas Resmi atau
+                belum dipetakan sehingga input kunjungan baru dinonaktifkan. Anda
+                tetap dapat meninjau riwayat kunjungan pada panel riwayat.
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <div className="mt-3 grid grid-cols-2 gap-2.5 border-t border-slate-200 pt-3">
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-            <p className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
-              Tarif / Daya & Lembar
-            </p>
-            <div className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 tabular-nums">
-              <Zap className="h-4 w-4 text-sky-600" strokeWidth={1.75} />
-              <span>
-                {piutang.pelanggan.tarif} / {formatDaya(piutang.pelanggan.daya)}
-              </span>
-            </div>
-            <p className="mt-0.5 text-xs font-medium text-slate-700 tabular-nums">
-              {piutang.jumlahLembar.toLocaleString("id-ID")} Lembar Tagihan
-            </p>
-          </div>
-
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-            <p className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
-              Total Nilai Tagihan
-            </p>
-            <p className="mt-1 text-lg font-bold text-slate-900 tabular-nums">
-              {formatRupiah(piutang.nilaiTagihan)}
-            </p>
-            <p className="mt-0.5 font-mono text-[11px] text-slate-600 tabular-nums">
-              Unit {piutang.pelanggan.kodeUnit ?? "51304"}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Banner Read-Only jika Piutang Sudah Lunas Resmi */}
-      {isPiutangLocked && editingPenagihanId === null && (
-        <Alert className="rounded-md border-emerald-200 bg-emerald-50 text-emerald-950">
-          <CheckCircle2
-            className="h-4 w-4 text-emerald-700"
-            strokeWidth={1.75}
-          />
-          <AlertTitle className="text-xs font-semibold tracking-wide text-emerald-900 uppercase">
-            Piutang Sudah Terverifikasi ({piutang.statusRekonsiliasi})
-          </AlertTitle>
-          <AlertDescription className="text-xs text-emerald-900">
-            Status piutang pelanggan ini telah berstatus Lunas Resmi atau belum
-            dipetakan sehingga input kunjungan baru dinonaktifkan. Anda tetap
-            dapat meninjau riwayat kunjungan di bawah ini.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Panel Form Kunjungan Lapangan */}
-      {showFormSection && (
-        <section
-          ref={formContainerRef}
-          aria-label="Form Kunjungan Lapangan"
-          className="rounded-md border border-slate-200 bg-white p-4 shadow-xs"
-        >
+          {/* Panel Form Kunjungan Lapangan */}
+          {showFormSection && (
+            <section
+              ref={formContainerRef}
+              aria-label="Form Kunjungan Lapangan"
+              className="rounded-md border border-slate-200 bg-white p-4 shadow-xs lg:p-5"
+            >
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">
@@ -1525,231 +1496,346 @@ export function FormKunjunganClient({
                 </div>
               )}
             </div>
+
+            {/* Footer Action Bar Inline Khusus Desktop (>= lg) */}
+            <div className="hidden items-center justify-end gap-3 border-t border-slate-200 pt-4 lg:flex">
+              {editingPenagihanId !== null && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-800 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Batal Edit
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={isSubmitting || isCompressing}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {isSubmitting && (
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    strokeWidth={1.75}
+                  />
+                )}
+                <span>
+                  {isSubmitting
+                    ? "Menyimpan Laporan..."
+                    : editingPenagihanId !== null
+                      ? "Simpan Perubahan Kunjungan"
+                      : "Simpan Laporan Kunjungan"}
+                </span>
+              </button>
+            </div>
           </form>
         </section>
       )}
-
-      {/* Panel Riwayat Kunjungan (One-to-Many) */}
-      <section aria-label="Riwayat Kunjungan Piutang" className="space-y-3">
-        <div className="flex items-center justify-between px-0.5">
-          <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-sky-600" strokeWidth={1.75} />
-            <h2 className="text-sm font-semibold text-slate-900">
-              Riwayat Kunjungan Lapangan
-            </h2>
-          </div>
-          <span className="rounded-md border border-slate-200 bg-white px-2.5 py-0.5 font-mono text-xs font-semibold text-slate-700 tabular-nums">
-            {piutang.riwayatPenagihan.length} Catatan
-          </span>
         </div>
 
-        {piutang.riwayatPenagihan.length === 0 ? (
-          <div className="rounded-md border border-slate-200 bg-white p-5 text-center shadow-xs">
-            <p className="text-sm font-semibold text-slate-900">
-              Belum Ada Riwayat Kunjungan
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              Laporan kunjungan yang Anda simpan akan tercatat secara kronologis
-              di sini.
-            </p>
-          </div>
-        ) : (
-          piutang.riwayatPenagihan.map((visit, index) => {
-            const visitAgeMs = nowMs - Date.parse(visit.waktuInput);
-            const remainingMs = EDIT_WINDOW_MS - visitAgeMs;
-            const isEditable = !isPiutangLocked && remainingMs >= 0;
-            const isCurrentlyEditing = editingPenagihanId === visit.id;
-
-            return (
-              <article
-                key={visit.id}
-                className={cn(
-                  "space-y-3 rounded-md border bg-white p-4 shadow-xs",
-                  isCurrentlyEditing
-                    ? "border-sky-600 ring-1 ring-sky-600"
-                    : "border-slate-200"
-                )}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-700 tabular-nums">
-                        Kunjungan #{piutang.riwayatPenagihan.length - index}
-                      </span>
-                      <span className="text-xs font-medium text-slate-600 tabular-nums">
-                        {formatTanggalWib(visit.waktuInput)}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-xs font-semibold text-slate-900">
-                      {visit.kategoriPelanggan === "KENDALI_PETUGAS"
-                        ? "Kendali Petugas"
-                        : "Di Luar Kendali Petugas"}
-                    </p>
-                  </div>
-
-                  <StatusBadge status={visit.bentukPenyelesaian} />
+        {/* Kolom Kanan Desktop (contents di Mobile agar urutan tetap Detail -> Form -> Riwayat; sticky block di Desktop) */}
+        <div className="contents lg:sticky lg:top-20 lg:order-2 lg:col-span-5 lg:block lg:space-y-4">
+          {/* Kartu 1: Ringkasan Profil Pelanggan & Tagihan (order-1 di Mobile) */}
+          <section
+            aria-label="Detail Pelanggan Piutang"
+            className="order-1 rounded-md border border-slate-200 bg-white p-4 shadow-xs"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-sm font-bold text-slate-900 tabular-nums">
+                    {piutang.idPelanggan}
+                  </span>
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-xs font-medium text-slate-700 tabular-nums">
+                    Periode {piutang.periode}
+                  </span>
                 </div>
+                <h1 className="mt-1 text-base font-bold text-slate-900">
+                  {piutang.pelanggan.namaPelanggan}
+                </h1>
+              </div>
+              <StatusBadge status={piutang.statusRekonsiliasi} />
+            </div>
 
-                {visit.rentangJanjiBayar && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
-                    <div className="flex items-center gap-1.5 text-slate-800">
-                      <Clock
-                        className="h-4 w-4 shrink-0 text-amber-700"
-                        strokeWidth={1.75}
-                      />
-                      <span className="font-semibold">
-                        {RENTANG_JANJI_BAYAR_LABEL_MAP[visit.rentangJanjiBayar]}
-                      </span>
-                    </div>
-                    {visit.pengingat && (
-                      <StatusBadge status={visit.pengingat.statusPengingat} />
-                    )}
-                  </div>
-                )}
+            <div className="mt-3 flex items-start gap-2 text-xs text-slate-700">
+              <MapPin
+                className="mt-0.5 h-4 w-4 shrink-0 text-slate-600"
+                strokeWidth={1.75}
+              />
+              <p className="leading-relaxed">{piutang.pelanggan.alamat}</p>
+            </div>
 
-                {visit.pengingat && (
-                  <p className="text-xs text-slate-600 tabular-nums">
-                    Periode pantau:{" "}
-                    <strong className="text-slate-900">
-                      {formatTanggalDateOnlyId(
-                        visit.pengingat.tanggalMulaiRentang
-                      )}{" "}
-                      s.d.{" "}
-                      {formatTanggalDateOnlyId(
-                        visit.pengingat.tanggalJatuhTempo
+            <div className="mt-3 grid grid-cols-2 gap-2.5 border-t border-slate-200 pt-3">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
+                  Tarif / Daya & Lembar
+                </p>
+                <div className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-900 tabular-nums">
+                  <Zap className="h-4 w-4 text-sky-600" strokeWidth={1.75} />
+                  <span>
+                    {piutang.pelanggan.tarif} /{" "}
+                    {formatDaya(piutang.pelanggan.daya)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs font-medium text-slate-700 tabular-nums">
+                  {piutang.jumlahLembar.toLocaleString("id-ID")} Lembar Tagihan
+                </p>
+              </div>
+
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
+                  Total Nilai Tagihan
+                </p>
+                <p className="mt-1 text-lg font-bold text-slate-900 tabular-nums">
+                  {formatRupiah(piutang.nilaiTagihan)}
+                </p>
+                <p className="mt-0.5 font-mono text-[11px] text-slate-600 tabular-nums">
+                  Unit {piutang.pelanggan.kodeUnit ?? "51304"}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Kartu 2: Riwayat Multi-Kunjungan & Foto Evidence (order-3 di Mobile) */}
+          <section
+            aria-label="Riwayat Kunjungan Piutang"
+            className="order-3 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-xs"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <History
+                  className="h-4 w-4 text-sky-600"
+                  strokeWidth={1.75}
+                />
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Riwayat Kunjungan Lapangan
+                </h2>
+              </div>
+              <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-slate-700 tabular-nums">
+                {piutang.riwayatPenagihan.length} Catatan
+              </span>
+            </div>
+
+            {piutang.riwayatPenagihan.length === 0 ? (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-5 text-center">
+                <p className="text-sm font-semibold text-slate-900">
+                  Belum Ada Riwayat Kunjungan
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Laporan kunjungan yang Anda simpan akan tercatat secara
+                  kronologis di sini.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 lg:max-h-[520px] lg:overflow-y-auto lg:pr-1">
+                {piutang.riwayatPenagihan.map((visit, index) => {
+                  const visitAgeMs = nowMs - Date.parse(visit.waktuInput);
+                  const remainingMs = EDIT_WINDOW_MS - visitAgeMs;
+                  const isEditable = !isPiutangLocked && remainingMs >= 0;
+                  const isCurrentlyEditing = editingPenagihanId === visit.id;
+
+                  return (
+                    <article
+                      key={visit.id}
+                      className={cn(
+                        "space-y-3 rounded-md border bg-white p-3.5",
+                        isCurrentlyEditing
+                          ? "border-sky-600 ring-1 ring-sky-600"
+                          : "border-slate-200"
                       )}
-                    </strong>
-                  </p>
-                )}
-
-                {visit.catatanKendala && (
-                  <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                    <p className="font-semibold text-slate-800">
-                      Catatan Kendala / Lapangan:
-                    </p>
-                    <p className="mt-1 leading-relaxed text-slate-700">
-                      {visit.catatanKendala}
-                    </p>
-                  </div>
-                )}
-
-                {/* Info GPS / Fallback */}
-                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                  {visit.latitude && visit.longitude ? (
-                    <div className="flex items-center gap-2 text-slate-800">
-                      <Navigation
-                        className="h-4 w-4 shrink-0 text-emerald-700"
-                        strokeWidth={1.75}
-                      />
-                      <span>
-                        GPS:{" "}
-                        <span className="font-mono font-semibold text-slate-900 tabular-nums">
-                          {visit.latitude}, {visit.longitude}
-                        </span>
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 text-slate-800">
-                      <p className="font-semibold text-amber-900">
-                        GPS Tidak Terkunci (Fallback)
-                      </p>
-                      <p className="leading-relaxed text-slate-700">
-                        Alasan: {visit.alasanKendalaGps ?? "-"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Galeri Evidence Privat */}
-                {visit.daftarEvidence.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-                      <ImageIcon
-                        className="h-4 w-4 text-sky-600"
-                        strokeWidth={1.75}
-                      />
-                      <span>
-                        Bukti Foto Lapangan ({visit.daftarEvidence.length})
-                      </span>
-                    </p>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {visit.daftarEvidence.map((ev) => (
-                        <button
-                          key={ev.id}
-                          type="button"
-                          onClick={() =>
-                            setPreviewModal({
-                              url: `/api/evidence/${ev.id}`,
-                              title: `Bukti Foto ${ev.jenisEvidence}`,
-                              subtitle: `Diunggah ${formatTanggalWib(ev.uploadedAt)} • ${ev.fileSizeKb ?? 0} KB`,
-                            })
-                          }
-                          className="group min-h-11 overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-left transition-colors hover:border-sky-500"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={`/api/evidence/${ev.id}`}
-                            alt={`Evidence ${ev.jenisEvidence}`}
-                            className="h-28 w-full object-cover"
-                          />
-                          <div className="flex items-center justify-between border-t border-slate-200 bg-white px-2.5 py-2 text-[11px]">
-                            <span className="font-semibold text-slate-900">
-                              {ev.jenisEvidence}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-700 tabular-nums">
+                              Kunjungan #
+                              {piutang.riwayatPenagihan.length - index}
                             </span>
-                            <span className="font-mono text-slate-600 tabular-nums">
-                              {ev.fileSizeKb ?? "-"} KB
+                            <span className="text-xs font-medium text-slate-600 tabular-nums">
+                              {formatTanggalWib(visit.waktuInput)}
                             </span>
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                          <p className="mt-1.5 text-xs font-semibold text-slate-900">
+                            {visit.kategoriPelanggan === "KENDALI_PETUGAS"
+                              ? "Kendali Petugas"
+                              : "Di Luar Kendali Petugas"}
+                          </p>
+                        </div>
 
-                {/* Footer Jendela Edit 24 Jam */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3">
-                  {isEditable ? (
-                    <>
-                      <span className="text-xs font-medium text-slate-600 tabular-nums">
-                        Sisa waktu edit:{" "}
-                        <strong className="text-slate-900">
-                          {formatRemainingEditWindow(remainingMs)}
-                        </strong>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleStartEditVisit(visit)}
-                        disabled={isCurrentlyEditing}
-                        className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-sky-600 bg-white px-3.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 disabled:opacity-50"
-                      >
-                        <Edit3 className="h-4 w-4" strokeWidth={1.75} />
-                        <span>
-                          {isCurrentlyEditing
-                            ? "Sedang Diedit"
-                            : "Edit Kunjungan"}
-                        </span>
-                      </button>
-                    </>
-                  ) : (
-                    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                      <Lock className="h-3.5 w-3.5" strokeWidth={1.75} />
-                      <span>
-                        {isPiutangLocked
-                          ? "Terkunci (Piutang Final)"
-                          : "Terkunci (> 24 Jam)"}
-                      </span>
-                    </span>
-                  )}
-                </div>
-              </article>
-            );
-          })
-        )}
-      </section>
+                        <StatusBadge status={visit.bentukPenyelesaian} />
+                      </div>
 
-      {/* Sticky Bottom Action Bar di atas Bottom Navigation Bar (bottom-16) */}
+                      {visit.rentangJanjiBayar && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                          <div className="flex items-center gap-1.5 text-slate-800">
+                            <Clock
+                              className="h-4 w-4 shrink-0 text-amber-700"
+                              strokeWidth={1.75}
+                            />
+                            <span className="font-semibold">
+                              {
+                                RENTANG_JANJI_BAYAR_LABEL_MAP[
+                                  visit.rentangJanjiBayar
+                                ]
+                              }
+                            </span>
+                          </div>
+                          {visit.pengingat && (
+                            <StatusBadge
+                              status={visit.pengingat.statusPengingat}
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {visit.pengingat && (
+                        <p className="text-xs text-slate-600 tabular-nums">
+                          Periode pantau:{" "}
+                          <strong className="text-slate-900">
+                            {formatTanggalDateOnlyId(
+                              visit.pengingat.tanggalMulaiRentang
+                            )}{" "}
+                            s.d.{" "}
+                            {formatTanggalDateOnlyId(
+                              visit.pengingat.tanggalJatuhTempo
+                            )}
+                          </strong>
+                        </p>
+                      )}
+
+                      {visit.catatanKendala && (
+                        <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
+                          <p className="font-semibold text-slate-800">
+                            Catatan Kendala / Lapangan:
+                          </p>
+                          <p className="mt-1 leading-relaxed text-slate-700">
+                            {visit.catatanKendala}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Info GPS / Fallback */}
+                      <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
+                        {visit.latitude && visit.longitude ? (
+                          <div className="flex items-center gap-2 text-slate-800">
+                            <Navigation
+                              className="h-4 w-4 shrink-0 text-emerald-700"
+                              strokeWidth={1.75}
+                            />
+                            <span>
+                              GPS:{" "}
+                              <span className="font-mono font-semibold text-slate-900 tabular-nums">
+                                {visit.latitude}, {visit.longitude}
+                              </span>
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="space-y-1 text-slate-800">
+                            <p className="font-semibold text-amber-900">
+                              GPS Tidak Terkunci (Fallback)
+                            </p>
+                            <p className="leading-relaxed text-slate-700">
+                              Alasan: {visit.alasanKendalaGps ?? "-"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Galeri Evidence Privat */}
+                      {visit.daftarEvidence.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+                            <ImageIcon
+                              className="h-4 w-4 text-sky-600"
+                              strokeWidth={1.75}
+                            />
+                            <span>
+                              Bukti Foto Lapangan ({visit.daftarEvidence.length}
+                              )
+                            </span>
+                          </p>
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {visit.daftarEvidence.map((ev) => (
+                              <button
+                                key={ev.id}
+                                type="button"
+                                onClick={() =>
+                                  setPreviewModal({
+                                    url: `/api/evidence/${ev.id}`,
+                                    title: `Bukti Foto ${ev.jenisEvidence}`,
+                                    subtitle: `Diunggah ${formatTanggalWib(ev.uploadedAt)} • ${ev.fileSizeKb ?? 0} KB`,
+                                  })
+                                }
+                                className="group min-h-11 overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-left transition-colors hover:border-sky-500"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={`/api/evidence/${ev.id}`}
+                                  alt={`Evidence ${ev.jenisEvidence}`}
+                                  className="h-28 w-full object-cover"
+                                />
+                                <div className="flex items-center justify-between border-t border-slate-200 bg-white px-2.5 py-2 text-[11px]">
+                                  <span className="font-semibold text-slate-900">
+                                    {ev.jenisEvidence}
+                                  </span>
+                                  <span className="font-mono text-slate-600 tabular-nums">
+                                    {ev.fileSizeKb ?? "-"} KB
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Footer Jendela Edit 24 Jam */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3">
+                        {isEditable ? (
+                          <>
+                            <span className="text-xs font-medium text-slate-600 tabular-nums">
+                              Sisa waktu edit:{" "}
+                              <strong className="text-slate-900">
+                                {formatRemainingEditWindow(remainingMs)}
+                              </strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditVisit(visit)}
+                              disabled={isCurrentlyEditing}
+                              className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-sky-600 bg-white px-3.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 disabled:opacity-50 lg:min-h-9"
+                            >
+                              <Edit3 className="h-4 w-4" strokeWidth={1.75} />
+                              <span>
+                                {isCurrentlyEditing
+                                  ? "Sedang Diedit"
+                                  : "Edit Kunjungan"}
+                              </span>
+                            </button>
+                          </>
+                        ) : (
+                          <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                            <Lock className="h-3.5 w-3.5" strokeWidth={1.75} />
+                            <span>
+                              {isPiutangLocked
+                                ? "Terkunci (Piutang Final)"
+                                : "Terkunci (> 24 Jam)"}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {/* Sticky Bottom Action Bar Khusus Mobile (< lg) di atas Bottom Navigation Bar (bottom-16) */}
       {showFormSection && (
-        <div className="fixed inset-x-0 bottom-16 z-20 border-t border-slate-200 bg-white px-4 py-3 shadow-xs">
+        <div className="fixed inset-x-0 bottom-16 z-20 border-t border-slate-200 bg-white px-4 py-3 shadow-xs lg:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-2.5">
             {editingPenagihanId !== null && (
               <button

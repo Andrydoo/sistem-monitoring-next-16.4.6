@@ -52,7 +52,9 @@ export function ReminderPriorityBanner({
       <div
         className={cn(
           "flex flex-col gap-3",
-          variant === "admin" && "lg:flex-row lg:items-center lg:justify-between"
+          variant === "petugas"
+            ? "sm:flex-row sm:items-center sm:justify-between"
+            : "lg:flex-row lg:items-center lg:justify-between"
         )}
       >
         <div className="flex items-start gap-3">
@@ -127,7 +129,7 @@ export function ReminderPriorityBanner({
         <div
           className={cn(
             "flex flex-wrap items-center gap-2",
-            variant === "petugas" ? "w-full" : "shrink-0"
+            variant === "petugas" ? "w-full shrink-0 sm:w-auto" : "shrink-0"
           )}
         >
           {variant === "admin" && showAdminTrigger && (
@@ -138,7 +140,9 @@ export function ReminderPriorityBanner({
             href={ctaHref}
             className={cn(
               "inline-flex items-center justify-center gap-2 rounded-md px-3.5 text-xs font-semibold transition-colors",
-              variant === "petugas" ? "min-h-11 w-full text-sm" : "h-9",
+              variant === "petugas"
+                ? "min-h-11 w-full text-sm sm:w-auto sm:text-xs"
+                : "h-9",
               isOverduePriority
                 ? "bg-red-700 text-white hover:bg-red-800"
                 : "bg-amber-700 text-white hover:bg-amber-800"

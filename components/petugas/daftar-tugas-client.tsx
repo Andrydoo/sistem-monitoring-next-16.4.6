@@ -205,32 +205,41 @@ export function DaftarTugasClient({
 
   return (
     <div className="space-y-4">
-      {/* Strip Ringkasan 4 Metrik Padat */}
-      <section aria-label="Ringkasan Beban Tugas" className="space-y-2.5">
-        <div className="flex items-center justify-between px-0.5">
-          <div className="flex items-center gap-2">
+      {/* Strip Ringkasan 4 Metrik Padat (2 kolom Mobile, 4 kolom Desktop) */}
+      <section aria-label="Ringkasan Beban Tugas" className="space-y-3">
+        <div className="flex items-center justify-between px-0.5 lg:rounded-md lg:border lg:border-slate-200 lg:bg-white lg:px-5 lg:py-4 lg:shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-sky-600 lg:flex">
+              <ClipboardCheck className="h-4 w-4" strokeWidth={1.75} />
+            </div>
             <ClipboardCheck
-              className="h-4 w-4 text-sky-600"
+              className="h-4 w-4 text-sky-600 lg:hidden"
               strokeWidth={1.75}
             />
-            <h1 className="text-sm font-semibold text-slate-900">
-              Daftar Tugas Penagihan
-            </h1>
+            <div>
+              <h1 className="text-sm font-semibold text-slate-900 lg:text-base">
+                Daftar Tugas Penagihan
+              </h1>
+              <p className="hidden text-xs text-slate-600 lg:block">
+                Diurutkan otomatis berdasarkan prioritas penagihan (Overdue,
+                Masa Janji Bayar, Belum Tertagih) dan nominal terbesar.
+              </p>
+            </div>
           </div>
-          <span className="font-mono text-xs font-semibold text-slate-600 tabular-nums">
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-semibold text-slate-700 tabular-nums">
             @{petugasUsername}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-md border border-slate-200 bg-white p-3.5 shadow-xs">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-md border border-slate-200 bg-white p-3.5 shadow-xs lg:p-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
                 Total Tugas
               </span>
               <Wallet className="h-4 w-4 text-sky-600" strokeWidth={1.75} />
             </div>
-            <p className="mt-1 text-lg font-bold text-slate-900 tabular-nums">
+            <p className="mt-1.5 text-lg font-bold text-slate-900 tabular-nums">
               {metrics.totalCount.toLocaleString("id-ID")}
             </p>
             <p className="mt-0.5 truncate text-xs font-medium text-slate-600 tabular-nums">
@@ -240,7 +249,7 @@ export function DaftarTugasClient({
 
           <div
             className={cn(
-              "rounded-md border bg-white p-3.5 shadow-xs",
+              "rounded-md border bg-white p-3.5 shadow-xs lg:p-4",
               metrics.overdueCount > 0 ? "border-red-300" : "border-slate-200"
             )}
           >
@@ -258,7 +267,7 @@ export function DaftarTugasClient({
             </div>
             <p
               className={cn(
-                "mt-1 text-lg font-bold tabular-nums",
+                "mt-1.5 text-lg font-bold tabular-nums",
                 metrics.overdueCount > 0 ? "text-red-700" : "text-slate-900"
               )}
             >
@@ -269,14 +278,14 @@ export function DaftarTugasClient({
             </p>
           </div>
 
-          <div className="rounded-md border border-slate-200 bg-white p-3.5 shadow-xs">
+          <div className="rounded-md border border-slate-200 bg-white p-3.5 shadow-xs lg:p-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
                 Janji Bayar
               </span>
               <Clock className="h-4 w-4 text-amber-600" strokeWidth={1.75} />
             </div>
-            <p className="mt-1 text-lg font-bold text-slate-900 tabular-nums">
+            <p className="mt-1.5 text-lg font-bold text-slate-900 tabular-nums">
               {metrics.janjiBayarCount.toLocaleString("id-ID")}
             </p>
             <p className="mt-0.5 text-xs font-medium text-slate-600">
@@ -284,7 +293,7 @@ export function DaftarTugasClient({
             </p>
           </div>
 
-          <div className="rounded-md border border-slate-200 bg-white p-3.5 shadow-xs">
+          <div className="rounded-md border border-slate-200 bg-white p-3.5 shadow-xs lg:p-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">
                 Belum Tertagih
@@ -294,7 +303,7 @@ export function DaftarTugasClient({
                 strokeWidth={1.75}
               />
             </div>
-            <p className="mt-1 text-lg font-bold text-slate-900 tabular-nums">
+            <p className="mt-1.5 text-lg font-bold text-slate-900 tabular-nums">
               {metrics.belumTertagihCount.toLocaleString("id-ID")}
             </p>
             <p className="mt-0.5 text-xs font-medium text-slate-600 tabular-nums">
@@ -304,13 +313,14 @@ export function DaftarTugasClient({
         </div>
       </section>
 
-      {/* Panel Filter Cepat Mobile-First */}
+      {/* Toolbar Filter Adaptif (Mobile vertikal min-h-11, Desktop horizontal 1 panel) */}
       <section
         aria-label="Filter Daftar Tugas"
-        className="space-y-3 rounded-md border border-slate-200 bg-white p-3.5 shadow-xs"
+        className="space-y-3 rounded-md border border-slate-200 bg-white p-3.5 shadow-xs lg:p-4"
       >
-        <div className="space-y-2.5">
-          <div className="relative">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          {/* Pencarian */}
+          <div className="relative flex-1 lg:max-w-md">
             <Search
               className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-600"
               strokeWidth={1.75}
@@ -321,24 +331,25 @@ export function DaftarTugasClient({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari IDPEL 12 digit, nama, atau alamat..."
               aria-label="Cari pelanggan berdasarkan ID Pelanggan, nama, atau alamat"
-              className="min-h-11 rounded-md border-slate-300 bg-white pr-11 pl-9 text-sm text-slate-900 placeholder:text-slate-600"
+              className="min-h-11 rounded-md border-slate-300 bg-white pr-11 pl-9 text-sm text-slate-900 placeholder:text-slate-600 lg:h-9 lg:min-h-9 lg:text-xs"
             />
             {searchQuery.length > 0 && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
                 aria-label="Hapus kata kunci pencarian"
-                className="absolute top-1/2 right-0 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-md text-slate-600 hover:text-slate-900"
+                className="absolute top-1/2 right-0 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-md text-slate-600 hover:text-slate-900 lg:h-9 lg:min-h-9 lg:w-9 lg:min-w-9"
               >
                 <X className="h-4 w-4" strokeWidth={1.75} />
               </button>
             )}
           </div>
 
-          <div>
+          {/* Dropdown Periode */}
+          <div className="lg:w-52 lg:shrink-0">
             <label
               htmlFor="filter-periode-petugas"
-              className="mb-1 block text-xs font-semibold text-slate-700"
+              className="mb-1 block text-xs font-semibold text-slate-700 lg:sr-only"
             >
               Periode Tagihan
             </label>
@@ -346,7 +357,7 @@ export function DaftarTugasClient({
               id="filter-periode-petugas"
               value={selectedPeriode}
               onChange={(e) => setSelectedPeriode(e.target.value)}
-              className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 outline-none focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-600/20"
+              className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 font-mono text-sm font-medium text-slate-900 tabular-nums outline-none focus-visible:border-sky-600 focus-visible:ring-2 focus-visible:ring-sky-600/20 lg:h-9 lg:min-h-9 lg:text-xs"
             >
               <option value="ALL">
                 Semua Periode ({tasks.length.toLocaleString("id-ID")})
@@ -358,42 +369,44 @@ export function DaftarTugasClient({
               ))}
             </select>
           </div>
-        </div>
 
-        {/* Chip Filter Status */}
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-slate-700">Status Tugas</p>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_CHIPS.map((chip) => {
-              const active = selectedChip === chip.key;
-              const count = chipCounts[chip.key];
-              return (
-                <button
-                  key={chip.key}
-                  type="button"
-                  onClick={() => setSelectedChip(chip.key)}
-                  aria-pressed={active}
-                  className={cn(
-                    "inline-flex min-h-11 items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold transition-colors",
-                    active
-                      ? "border-sky-600 bg-sky-600 text-white shadow-xs"
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                  )}
-                >
-                  <span>{chip.label}</span>
-                  <span
+          {/* Chip Filter Status Sejajar di Desktop, Wrap min-h-11 di Mobile */}
+          <div className="space-y-1.5 lg:flex lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-1.5 lg:space-y-0">
+            <p className="text-xs font-semibold text-slate-700 lg:sr-only">
+              Status Tugas
+            </p>
+            <div className="flex flex-wrap gap-2 lg:gap-1.5">
+              {STATUS_CHIPS.map((chip) => {
+                const active = selectedChip === chip.key;
+                const count = chipCounts[chip.key];
+                return (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={() => setSelectedChip(chip.key)}
+                    aria-pressed={active}
                     className={cn(
-                      "rounded-md px-1.5 py-0.5 font-mono text-[11px] tabular-nums",
+                      "inline-flex min-h-11 items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold transition-colors lg:h-9 lg:min-h-9 lg:px-2.5 lg:py-1",
                       active
-                        ? "bg-sky-700 text-white"
-                        : "bg-slate-100 text-slate-700"
+                        ? "border-sky-600 bg-sky-600 text-white shadow-xs"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                     )}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+                    <span>{chip.label}</span>
+                    <span
+                      className={cn(
+                        "rounded-md px-1.5 py-0.5 font-mono text-[11px] tabular-nums",
+                        active
+                          ? "bg-sky-700 text-white"
+                          : "bg-slate-100 text-slate-700"
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -415,151 +428,263 @@ export function DaftarTugasClient({
           <button
             type="button"
             onClick={handleResetFilters}
-            className="inline-flex min-h-11 items-center rounded-md px-2.5 text-xs font-semibold text-sky-700 hover:bg-sky-50"
+            className="inline-flex min-h-11 items-center rounded-md px-2.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 lg:min-h-8"
           >
             Reset Filter
           </button>
         )}
       </div>
 
-      {/* Daftar Kartu Pelanggan Mobile-First */}
-      <section aria-label="Daftar Kartu Tugas Pelanggan" className="space-y-3">
-        {filteredTasks.length === 0 ? (
-          <div className="rounded-md border border-slate-200 bg-white p-6 text-center shadow-xs">
-            <p className="text-sm font-semibold text-slate-900">
-              {tasks.length === 0
-                ? "Belum Ada Penugasan Aktif"
-                : "Tidak Ada Tugas Sesuai Filter"}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              {tasks.length === 0 ? (
-                <>
-                  Belum ada data piutang pelanggan yang ditugaskan kepada akun{" "}
-                  <span className="font-mono font-semibold text-slate-900 tabular-nums">
-                    @{petugasUsername}
-                  </span>
-                  .
-                </>
-              ) : (
-                "Ubah kata kunci pencarian atau pilih filter status lainnya untuk melihat daftar pelanggan."
-              )}
-            </p>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-900 hover:bg-slate-50"
-              >
-                Tampilkan Semua Tugas
-              </button>
+      {/* Empty State Bersama (Mobile & Desktop) */}
+      {filteredTasks.length === 0 ? (
+        <div className="rounded-md border border-slate-200 bg-white p-6 text-center shadow-xs lg:p-10">
+          <p className="text-sm font-semibold text-slate-900">
+            {tasks.length === 0
+              ? "Belum Ada Penugasan Aktif"
+              : "Tidak Ada Tugas Sesuai Filter"}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-600">
+            {tasks.length === 0 ? (
+              <>
+                Belum ada data piutang pelanggan yang ditugaskan kepada akun{" "}
+                <span className="font-mono font-semibold text-slate-900 tabular-nums">
+                  @{petugasUsername}
+                </span>
+                .
+              </>
+            ) : (
+              "Ubah kata kunci pencarian atau pilih filter status lainnya untuk melihat daftar pelanggan."
             )}
-          </div>
-        ) : (
-          filteredTasks.map((tugas) => {
-            const isLunasResmi = tugas.statusRekonsiliasi === "LUNAS_RESMI";
+          </p>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-900 hover:bg-slate-50 lg:min-h-9"
+            >
+              Tampilkan Semua Tugas
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Mode Mobile (< lg): Daftar Kartu Vertikal Berkontras Tinggi */}
+          <section
+            aria-label="Daftar Kartu Tugas Pelanggan"
+            className="block space-y-3 lg:hidden"
+          >
+            {filteredTasks.map((tugas) => {
+              const isLunasResmi = tugas.statusRekonsiliasi === "LUNAS_RESMI";
 
-            return (
-              <article
-                key={tugas.id}
-                className={cn(
-                  "rounded-md border border-slate-200 bg-white p-4 shadow-xs",
-                  tugas.statusRekonsiliasi === "OVERDUE" &&
-                    "border-l-4 border-l-red-600",
-                  tugas.statusRekonsiliasi === "MASA_JANJI_BAYAR" &&
-                    "border-l-4 border-l-amber-500"
-                )}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-semibold text-slate-700 tabular-nums">
-                        {tugas.idPelanggan}
-                      </span>
-                      <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] font-medium text-slate-700 tabular-nums">
-                        {tugas.periode}
-                      </span>
+              return (
+                <article
+                  key={tugas.id}
+                  className={cn(
+                    "rounded-md border border-slate-200 bg-white p-4 shadow-xs",
+                    tugas.statusRekonsiliasi === "OVERDUE" &&
+                      "border-l-4 border-l-red-600",
+                    tugas.statusRekonsiliasi === "MASA_JANJI_BAYAR" &&
+                      "border-l-4 border-l-amber-500"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-slate-700 tabular-nums">
+                          {tugas.idPelanggan}
+                        </span>
+                        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] font-medium text-slate-700 tabular-nums">
+                          {tugas.periode}
+                        </span>
+                      </div>
+                      <h2 className="mt-1 text-base font-semibold text-slate-900">
+                        {tugas.pelanggan.namaPelanggan}
+                      </h2>
                     </div>
-                    <h2 className="mt-1 text-base font-semibold text-slate-900">
-                      {tugas.pelanggan.namaPelanggan}
-                    </h2>
+                    <StatusBadge status={tugas.statusRekonsiliasi} />
                   </div>
-                  <StatusBadge status={tugas.statusRekonsiliasi} />
-                </div>
 
-                <div className="mt-2.5 flex items-start gap-2 text-xs text-slate-600">
-                  <MapPin
-                    className="mt-0.5 h-4 w-4 shrink-0 text-slate-600"
-                    strokeWidth={1.75}
-                  />
-                  <span className="leading-relaxed">
-                    {tugas.pelanggan.alamat}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700 tabular-nums">
-                    <Zap
-                      className="h-4 w-4 shrink-0 text-sky-600"
+                  <div className="mt-2.5 flex items-start gap-2 text-xs text-slate-600">
+                    <MapPin
+                      className="mt-0.5 h-4 w-4 shrink-0 text-slate-600"
                       strokeWidth={1.75}
                     />
-                    <span>
-                      {tugas.pelanggan.tarif} / {formatDaya(tugas.pelanggan.daya)}{" "}
-                      • {tugas.jumlahLembar.toLocaleString("id-ID")} Lbr
+                    <span className="leading-relaxed">
+                      {tugas.pelanggan.alamat}
                     </span>
                   </div>
-                  <span className="text-base font-bold text-slate-900 tabular-nums">
-                    {formatRupiah(tugas.nilaiTagihan)}
-                  </span>
-                </div>
 
-                <div className="mt-2.5 flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
-                  <History
-                    className="h-4 w-4 shrink-0 text-slate-600"
-                    strokeWidth={1.75}
-                  />
-                  {tugas.jumlahKunjungan === 0 || !tugas.kunjunganTerakhir ? (
-                    <span className="font-medium">
-                      Belum ada riwayat kunjungan lapangan
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700 tabular-nums">
+                      <Zap
+                        className="h-4 w-4 shrink-0 text-sky-600"
+                        strokeWidth={1.75}
+                      />
+                      <span>
+                        {tugas.pelanggan.tarif} /{" "}
+                        {formatDaya(tugas.pelanggan.daya)} •{" "}
+                        {tugas.jumlahLembar.toLocaleString("id-ID")} Lbr
+                      </span>
+                    </div>
+                    <span className="text-base font-bold text-slate-900 tabular-nums">
+                      {formatRupiah(tugas.nilaiTagihan)}
                     </span>
-                  ) : (
-                    <span className="tabular-nums">
-                      <strong className="font-semibold text-slate-900">
-                        {tugas.jumlahKunjungan}x kunjungan
-                      </strong>{" "}
-                      • Terakhir:{" "}
-                      {PENYELESAIAN_LABEL[
-                        tugas.kunjunganTerakhir.bentukPenyelesaian
-                      ]}{" "}
-                      ({formatTanggalWib(tugas.kunjunganTerakhir.waktuInput)})
-                    </span>
-                  )}
-                </div>
+                  </div>
 
-                <div className="mt-3">
-                  <Link
-                    href={`/petugas/piutang/${tugas.id}`}
-                    className={cn(
-                      "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors",
-                      isLunasResmi
-                        ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
-                        : "bg-sky-600 text-white hover:bg-sky-700"
+                  <div className="mt-2.5 flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
+                    <History
+                      className="h-4 w-4 shrink-0 text-slate-600"
+                      strokeWidth={1.75}
+                    />
+                    {tugas.jumlahKunjungan === 0 || !tugas.kunjunganTerakhir ? (
+                      <span className="font-medium">
+                        Belum ada riwayat kunjungan lapangan
+                      </span>
+                    ) : (
+                      <span className="tabular-nums">
+                        <strong className="font-semibold text-slate-900">
+                          {tugas.jumlahKunjungan}x kunjungan
+                        </strong>{" "}
+                        • Terakhir:{" "}
+                        {
+                          PENYELESAIAN_LABEL[
+                            tugas.kunjunganTerakhir.bentukPenyelesaian
+                          ]
+                        }{" "}
+                        ({formatTanggalWib(tugas.kunjunganTerakhir.waktuInput)})
+                      </span>
                     )}
-                  >
-                    <span>
-                      {isLunasResmi
-                        ? "Lihat Detail & Riwayat"
-                        : tugas.jumlahKunjungan > 0
-                          ? "Buka Tugas & Kelola Kunjungan"
-                          : "Buka Tugas & Input Kunjungan"}
-                    </span>
-                    <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
-                  </Link>
-                </div>
-              </article>
-            );
-          })
-        )}
-      </section>
+                  </div>
+
+                  <div className="mt-3">
+                    <Link
+                      href={`/petugas/piutang/${tugas.id}`}
+                      className={cn(
+                        "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors",
+                        isLunasResmi
+                          ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+                          : "bg-sky-600 text-white hover:bg-sky-700"
+                      )}
+                    >
+                      <span>
+                        {isLunasResmi
+                          ? "Lihat Detail & Riwayat"
+                          : tugas.jumlahKunjungan > 0
+                            ? "Buka Tugas & Kelola Kunjungan"
+                            : "Buka Tugas & Input Kunjungan"}
+                      </span>
+                      <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+
+          {/* Mode Desktop (>= lg): Tabel Operasional High-Density dengan Sticky Header */}
+          <section
+            aria-label="Tabel Operasional Daftar Tugas"
+            className="hidden overflow-hidden rounded-md border border-slate-200 bg-white shadow-xs lg:block"
+          >
+            <div className="max-h-[640px] overflow-auto">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
+                    <th className="px-4 py-3">ID Pelanggan</th>
+                    <th className="px-4 py-3">Nama Pelanggan & Alamat</th>
+                    <th className="px-4 py-3">Tarif / Daya</th>
+                    <th className="px-4 py-3 text-right">Lembar</th>
+                    <th className="px-4 py-3 text-right">Nilai Tagihan (Rp)</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Riwayat</th>
+                    <th className="px-4 py-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filteredTasks.map((tugas) => (
+                    <tr
+                      key={tugas.id}
+                      className={cn(
+                        "hover:bg-slate-50/80",
+                        tugas.statusRekonsiliasi === "OVERDUE" &&
+                          "bg-red-50/20 hover:bg-red-50/40"
+                      )}
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <p className="font-mono font-semibold text-slate-900 tabular-nums">
+                          {tugas.idPelanggan}
+                        </p>
+                        <p className="mt-0.5 font-mono text-[11px] text-slate-500 tabular-nums">
+                          Periode {tugas.periode}
+                        </p>
+                      </td>
+                      <td className="max-w-xs px-4 py-3">
+                        <p className="font-semibold text-slate-900">
+                          {tugas.pelanggan.namaPelanggan}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500">
+                          {tugas.pelanggan.alamat}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-slate-700 tabular-nums">
+                        <span className="font-semibold text-slate-900">
+                          {tugas.pelanggan.tarif}
+                        </span>{" "}
+                        / {formatDaya(tugas.pelanggan.daya)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-slate-800 tabular-nums">
+                        {tugas.jumlahLembar.toLocaleString("id-ID")}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold whitespace-nowrap text-slate-900 tabular-nums">
+                        {formatRupiah(tugas.nilaiTagihan)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <StatusBadge status={tugas.statusRekonsiliasi} />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {tugas.jumlahKunjungan === 0 ||
+                        !tugas.kunjunganTerakhir ? (
+                          <span className="text-[11px] text-slate-500">
+                            Belum dikunjungi
+                          </span>
+                        ) : (
+                          <div>
+                            <p className="font-medium text-slate-800 tabular-nums">
+                              {tugas.jumlahKunjungan}x •{" "}
+                              {
+                                PENYELESAIAN_LABEL[
+                                  tugas.kunjunganTerakhir.bentukPenyelesaian
+                                ]
+                              }
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-slate-500 tabular-nums">
+                              {formatTanggalWib(
+                                tugas.kunjunganTerakhir.waktuInput
+                              )}
+                            </p>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <Link
+                          href={`/petugas/piutang/${tugas.id}`}
+                          className="inline-flex h-8 items-center gap-1 rounded-md bg-sky-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-sky-700"
+                        >
+                          <span>Input / Detail</span>
+                          <ChevronRight
+                            className="h-3.5 w-3.5"
+                            strokeWidth={1.75}
+                          />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

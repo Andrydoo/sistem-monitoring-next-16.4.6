@@ -4,20 +4,19 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { PeranPengguna } from "@prisma/client";
 import {
+  AlertTriangle,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
   Loader2,
   Pencil,
   Search,
   Shield,
-  UserPlus,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  createPenggunaAction,
-  updatePenggunaAction,
-} from "@/app/admin/actions";
+import { updatePenggunaAction } from "@/app/admin/actions";
 import { formatRupiah, formatTanggalWib } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,17 +57,6 @@ export function AdminPenggunaClient({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState<string>("ALL");
 
-  // State Dialog Tambah Pengguna
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-  const [createUsername, setCreateUsername] = React.useState("");
-  const [createNama, setCreateNama] = React.useState("");
-  const [createPassword, setCreatePassword] = React.useState("");
-  const [createPeran, setCreatePeran] =
-    React.useState<PeranPengguna>("PETUGAS");
-  const [createKodeUnit, setCreateKodeUnit] = React.useState("51304");
-  const [createIsActive, setCreateIsActive] = React.useState(true);
-  const [isCreating, setIsCreating] = React.useState(false);
-
   // State Dialog Ubah Pengguna
   const [editTarget, setEditTarget] =
     React.useState<PenggunaAdminItem | null>(null);
@@ -77,6 +65,8 @@ export function AdminPenggunaClient({
   const [editKodeUnit, setEditKodeUnit] = React.useState("51304");
   const [editIsActive, setEditIsActive] = React.useState(true);
   const [editPasswordBaru, setEditPasswordBaru] = React.useState("");
+  const [showEditPassword, setShowEditPassword] = React.useState(false);
+  const [editError, setEditError] = React.useState<string | null>(null);
   const [isUpdating, setIsUpdating] = React.useState(false);
 
   const filteredUsers = React.useMemo(() => {
@@ -95,44 +85,6 @@ export function AdminPenggunaClient({
     });
   }, [users, roleFilter, searchQuery]);
 
-  const openCreateModal = () => {
-    setCreateUsername("");
-    setCreateNama("");
-    setCreatePassword("");
-    setCreatePeran("PETUGAS");
-    setCreateKodeUnit("51304");
-    setCreateIsActive(true);
-    setIsCreateOpen(true);
-  };
-
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreating(true);
-    try {
-      const res = await createPenggunaAction({
-        username: createUsername.trim(),
-        nama: createNama.trim(),
-        password: createPassword,
-        peran: createPeran,
-        kodeUnit: createKodeUnit.trim() || "51304",
-        isActive: createIsActive,
-      });
-
-      if (!res.success) {
-        toast.error(res.message);
-        return;
-      }
-
-      toast.success(res.message);
-      setIsCreateOpen(false);
-      router.refresh();
-    } catch {
-      toast.error("Gagal menambahkan pengguna baru.");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   const openEditModal = (user: PenggunaAdminItem) => {
     setEditTarget(user);
     setEditNama(user.nama);
@@ -140,24 +92,47 @@ export function AdminPenggunaClient({
     setEditKodeUnit(user.kodeUnit ?? "51304");
     setEditIsActive(user.isActive);
     setEditPasswordBaru("");
+    setShowEditPassword(false);
+    setEditError(null);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editTarget) return;
+    setEditError(null);
+
+    const trimmedNama = editNama.trim();
+    const trimmedKodeUnit = editKodeUnit.trim();
+    const trimmedPassword = editPasswordBaru.trim();
+
+    if (trimmedNama.length < 2 || trimmedNama.length > 150) {
+      setEditError("Nama lengkap personel wajib diisi minimal 2 karakter.");
+      return;
+    }
+
+    if (trimmedKodeUnit.length > 10) {
+      setEditError("Kode Unit maksimal 10 karakter.");
+      return;
+    }
+
+    if (trimmedPassword.length > 0 && trimmedPassword.length < 6) {
+      setEditError("Kata sandi baru minimal harus 6 karakter.");
+      return;
+    }
 
     setIsUpdating(true);
     try {
       const res = await updatePenggunaAction({
         id: editTarget.id,
-        nama: editNama.trim(),
+        nama: trimmedNama,
         peran: editPeran,
-        kodeUnit: editKodeUnit.trim() || "51304",
+        kodeUnit: trimmedKodeUnit || "51304",
         isActive: editIsActive,
-        passwordBaru: editPasswordBaru.trim() || undefined,
+        passwordBaru: trimmedPassword || undefined,
       });
 
       if (!res.success) {
+        setEditError(res.message);
         toast.error(res.message);
         return;
       }
@@ -166,7 +141,9 @@ export function AdminPenggunaClient({
       setEditTarget(null);
       router.refresh();
     } catch {
-      toast.error("Gagal memperbarui data pengguna.");
+      const msg = "Gagal memperbarui data pengguna.";
+      setEditError(msg);
+      toast.error(msg);
     } finally {
       setIsUpdating(false);
     }
@@ -202,7 +179,7 @@ export function AdminPenggunaClient({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar Pencarian, Filter Peran, dan Tombol Tambah Pengguna */}
+      {/* Toolbar Pencarian & Filter Peran */}
       <div className="flex flex-col justify-between gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center">
         <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative max-w-sm flex-1">
@@ -232,15 +209,17 @@ export function AdminPenggunaClient({
           </select>
         </div>
 
-        <Button
-          type="button"
-          size="sm"
-          onClick={openCreateModal}
-          className="h-9 rounded-md bg-sky-600 px-3.5 text-xs font-semibold text-white hover:bg-sky-700"
-        >
-          <UserPlus className="h-4 w-4" strokeWidth={1.75} />
-          <span>Tambah Pengguna</span>
-        </Button>
+        <span className="text-xs text-slate-500 tabular-nums">
+          Menampilkan{" "}
+          <strong className="font-semibold text-slate-900">
+            {filteredUsers.length}
+          </strong>{" "}
+          dari{" "}
+          <strong className="font-semibold text-slate-900">
+            {users.length}
+          </strong>{" "}
+          pengguna
+        </span>
       </div>
 
       {/* Tabel Daftar Pengguna & Beban Piutang */}
@@ -358,180 +337,18 @@ export function AdminPenggunaClient({
         </div>
       </div>
 
-      {/* Dialog Tambah Pengguna Baru */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="rounded-md border-slate-200 bg-white sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-slate-900">
-              Tambah Akun Pengguna Baru
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600">
-              Daftarkan personel baru ULP Kraksaan dengan otorisasi peran
-              (RBAC) yang sesuai.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleCreateSubmit} className="space-y-3.5">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="create-username"
-                className="text-xs font-semibold text-slate-700"
-              >
-                Username Login
-              </Label>
-              <Input
-                id="create-username"
-                type="text"
-                placeholder="Contoh: ptg_03"
-                value={createUsername}
-                onChange={(e) => setCreateUsername(e.target.value)}
-                required
-                minLength={3}
-                maxLength={50}
-                className="h-9 rounded-md border-slate-300 font-mono text-xs tabular-nums"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="create-nama"
-                className="text-xs font-semibold text-slate-700"
-              >
-                Nama Lengkap Personel
-              </Label>
-              <Input
-                id="create-nama"
-                type="text"
-                placeholder="Contoh: Hendro Siswanto"
-                value={createNama}
-                onChange={(e) => setCreateNama(e.target.value)}
-                required
-                minLength={2}
-                maxLength={150}
-                className="h-9 rounded-md border-slate-300 text-xs"
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="create-peran"
-                  className="text-xs font-semibold text-slate-700"
-                >
-                  Peran RBAC
-                </Label>
-                <select
-                  id="create-peran"
-                  value={createPeran}
-                  onChange={(e) =>
-                    setCreatePeran(e.target.value as PeranPengguna)
-                  }
-                  className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none"
-                >
-                  <option value="PETUGAS">PETUGAS</option>
-                  <option value="PIMPINAN">PIMPINAN</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="create-kode-unit"
-                  className="text-xs font-semibold text-slate-700"
-                >
-                  Kode Unit ULP
-                </Label>
-                <Input
-                  id="create-kode-unit"
-                  type="text"
-                  value={createKodeUnit}
-                  onChange={(e) => setCreateKodeUnit(e.target.value)}
-                  maxLength={10}
-                  required
-                  className="h-9 rounded-md border-slate-300 font-mono text-xs tabular-nums"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="create-password"
-                className="text-xs font-semibold text-slate-700"
-              >
-                Kata Sandi Awal (Minimal 6 Karakter)
-              </Label>
-              <Input
-                id="create-password"
-                type="password"
-                placeholder="Masukkan kata sandi..."
-                value={createPassword}
-                onChange={(e) => setCreatePassword(e.target.value)}
-                required
-                minLength={6}
-                className="h-9 rounded-md border-slate-300 text-xs"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-3">
-              <input
-                id="create-is-active"
-                type="checkbox"
-                checked={createIsActive}
-                onChange={(e) => setCreateIsActive(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-slate-300 text-sky-600"
-              />
-              <Label
-                htmlFor="create-is-active"
-                className="cursor-pointer text-xs font-medium text-slate-800"
-              >
-                Aktifkan akun segera setelah dibuat
-              </Label>
-            </div>
-
-            <DialogFooter className="gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCreateOpen(false)}
-                className="h-9 rounded-md border-slate-300 text-xs"
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isCreating}
-                className="h-9 rounded-md bg-sky-600 px-4 text-xs font-semibold text-white hover:bg-sky-700"
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2
-                      className="h-3.5 w-3.5 animate-spin"
-                      strokeWidth={1.75}
-                    />
-                    <span>Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-3.5 w-3.5" strokeWidth={1.75} />
-                    <span>Simpan Pengguna</span>
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
       {/* Dialog Ubah Pengguna & Reset Kata Sandi */}
       <Dialog
         open={Boolean(editTarget)}
         onOpenChange={(open) => {
-          if (!open) setEditTarget(null);
+          if (!open) {
+            setEditTarget(null);
+            setEditError(null);
+            setShowEditPassword(false);
+          }
         }}
       >
-        <DialogContent className="rounded-md border-slate-200 bg-white sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-md border-slate-200 bg-white sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-slate-900">
               Ubah Data Pengguna & Hak Akses
@@ -543,7 +360,20 @@ export function AdminPenggunaClient({
           </DialogHeader>
 
           {editTarget && (
-            <form onSubmit={handleEditSubmit} className="space-y-3.5">
+            <form onSubmit={handleEditSubmit} noValidate className="space-y-3.5">
+              {editError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
+                >
+                  <AlertTriangle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+                    strokeWidth={1.75}
+                  />
+                  <span>{editError}</span>
+                </div>
+              )}
+
               <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                 <span className="text-slate-500">Username: </span>
                 <span className="font-mono font-semibold text-slate-900 tabular-nums">
@@ -562,7 +392,10 @@ export function AdminPenggunaClient({
                   id="edit-nama"
                   type="text"
                   value={editNama}
-                  onChange={(e) => setEditNama(e.target.value)}
+                  onChange={(e) => {
+                    setEditNama(e.target.value);
+                    if (editError) setEditError(null);
+                  }}
                   required
                   minLength={2}
                   maxLength={150}
@@ -604,7 +437,10 @@ export function AdminPenggunaClient({
                     id="edit-kode-unit"
                     type="text"
                     value={editKodeUnit}
-                    onChange={(e) => setEditKodeUnit(e.target.value)}
+                    onChange={(e) => {
+                      setEditKodeUnit(e.target.value);
+                      if (editError) setEditError(null);
+                    }}
                     maxLength={10}
                     required
                     className="h-9 rounded-md border-slate-300 font-mono text-xs tabular-nums"
@@ -623,14 +459,35 @@ export function AdminPenggunaClient({
                   />
                   <span>Reset Kata Sandi (Opsional)</span>
                 </Label>
-                <Input
-                  id="edit-password-baru"
-                  type="password"
-                  placeholder="Kosongkan jika tidak ingin mengubah kata sandi"
-                  value={editPasswordBaru}
-                  onChange={(e) => setEditPasswordBaru(e.target.value)}
-                  className="h-9 rounded-md border-slate-300 text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    id="edit-password-baru"
+                    type={showEditPassword ? "text" : "password"}
+                    placeholder="Kosongkan jika tidak ingin mengubah kata sandi"
+                    value={editPasswordBaru}
+                    onChange={(e) => {
+                      setEditPasswordBaru(e.target.value);
+                      if (editError) setEditError(null);
+                    }}
+                    className="h-9 rounded-md border-slate-300 pr-9 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword((prev) => !prev)}
+                    aria-label={
+                      showEditPassword
+                        ? "Sembunyikan kata sandi baru"
+                        : "Lihat kata sandi baru"
+                    }
+                    className="absolute top-0 right-0 flex h-9 w-9 items-center justify-center text-slate-500 hover:text-slate-800"
+                  >
+                    {showEditPassword ? (
+                      <EyeOff className="h-4 w-4" strokeWidth={1.75} />
+                    ) : (
+                      <Eye className="h-4 w-4" strokeWidth={1.75} />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="rounded-md border border-slate-200 bg-slate-50 p-3">

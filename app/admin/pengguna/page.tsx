@@ -5,6 +5,7 @@ import {
   AdminPenggunaClient,
   type PenggunaAdminItem,
 } from "@/components/admin/pengguna-client";
+import { TambahPenggunaDialog } from "@/components/admin/tambah-pengguna-dialog";
 
 export default async function AdminPenggunaPage() {
   const session = await requireRole(["ADMIN"]);
@@ -91,6 +92,10 @@ export default async function AdminPenggunaPage() {
               Lapangan pada PT PLN (Persero) ULP Kraksaan.
             </p>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <TambahPenggunaDialog />
         </div>
       </div>
 

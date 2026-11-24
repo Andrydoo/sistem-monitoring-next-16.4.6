@@ -13,6 +13,170 @@ export interface AdminActionResult {
   message: string;
 }
 
+export type LookupPelangganResult =
+  | {
+      found: true;
+      pelanggan: {
+        idPelanggan: string;
+        namaPelanggan: string;
+        alamat: string;
+        tarif: string;
+        daya: number;
+        kodeUnit: string | null;
+      };
+    }
+  | {
+      found: false;
+    };
+
+export type CreatePiutangManualResult =
+  | {
+      success: true;
+      statusRekonsiliasi: StatusRekonsiliasi;
+      message: string;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+export interface CreatePiutangManualInput {
+  idPelanggan: string;
+  namaPelanggan: string;
+  alamat: string;
+  tarif: string;
+  daya: number | string;
+  kodeUnit?: string | null;
+  periode: string;
+  jumlahLembar: number | string;
+  nilaiTagihan: number | string;
+  idPetugas?: number | string | null;
+}
+
+const createPiutangManualSchema = z.object({
+  idPelanggan: z
+    .string()
+    .transform((val) => val.replace(/\s+/g, "").trim())
+    .refine((val) => /^\d{8,20}$/.test(val), {
+      message:
+        "ID Pelanggan harus berupa 8 hingga 20 digit angka (direkomendasikan 12 digit IDPEL PLN).",
+    }),
+  namaPelanggan: z
+    .string()
+    .trim()
+    .min(2, "Nama pelanggan minimal 2 karakter.")
+    .max(150, "Nama pelanggan maksimal 150 karakter."),
+  alamat: z
+    .string()
+    .trim()
+    .min(5, "Alamat lengkap pelanggan minimal 5 karakter."),
+  tarif: z
+    .string()
+    .trim()
+    .min(1, "Golongan tarif wajib diisi.")
+    .max(10, "Golongan tarif maksimal 10 karakter.")
+    .transform((val) => val.toUpperCase()),
+  daya: z.coerce
+    .number()
+    .int("Daya (VA) harus berupa bilangan bulat positif.")
+    .positive("Daya (VA) harus lebih besar dari 0."),
+  kodeUnit: z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === undefined) return "51304";
+      if (val === null) return null;
+      const trimmed = val.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    })
+    .refine((val) => val === null || val.length <= 10, {
+      message: "Kode Unit maksimal 10 karakter.",
+    }),
+  periode: z
+    .string()
+    .trim()
+    .regex(
+      /^\d{4}-(0[1-9]|1[0-2])$/,
+      "Format periode wajib YYYY-MM (contoh: 2026-09)."
+    ),
+  jumlahLembar: z.coerce
+    .number()
+    .int("Jumlah lembar harus berupa bilangan bulat.")
+    .min(1, "Jumlah lembar minimal 1."),
+  nilaiTagihan: z
+    .union([z.string(), z.number()])
+    .transform((val, ctx): bigint => {
+      if (typeof val === "number") {
+        if (!Number.isFinite(val) || !Number.isInteger(val) || val <= 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Nilai tagihan harus berupa angka bulat positif (Rp > 0).",
+          });
+          return z.NEVER;
+        }
+        return BigInt(val);
+      }
+
+      const cleaned = val
+        .trim()
+        .replace(/^rp\s*/i, "")
+        .replace(/\s+/g, "")
+        .replace(/\./g, "");
+
+      if (!/^\d+$/.test(cleaned)) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Nilai tagihan hanya boleh berisi angka nominal Rupiah positif.",
+        });
+        return z.NEVER;
+      }
+
+      const parsedBigInt = BigInt(cleaned);
+      if (parsedBigInt <= BigInt(0)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Nilai tagihan harus lebih besar dari Rp 0.",
+        });
+        return z.NEVER;
+      }
+
+      return parsedBigInt;
+    }),
+  idPetugas: z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .transform((val, ctx): number | null => {
+      if (val === null || val === undefined) return null;
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        if (trimmed === "" || trimmed === "__UNASSIGNED__") return null;
+        if (!/^\d+$/.test(trimmed)) {
+          ctx.addIssue({
+            code: "custom",
+            message: "ID Petugas tidak valid.",
+          });
+          return z.NEVER;
+        }
+        const num = Number.parseInt(trimmed, 10);
+        if (!Number.isSafeInteger(num) || num <= 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "ID Petugas harus berupa bilangan bulat positif.",
+          });
+          return z.NEVER;
+        }
+        return num;
+      }
+      if (!Number.isInteger(val) || val <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "ID Petugas harus berupa bilangan bulat positif.",
+        });
+        return z.NEVER;
+      }
+      return val;
+    }),
+});
+
 const resolveAnomaliSchema = z.object({
   piutangId: z.number().int().positive("ID Piutang tidak valid."),
   idPetugas: z.number().int().positive("Petugas tujuan wajib dipilih."),
@@ -708,6 +872,218 @@ export async function updatePenggunaAction(input: {
     return {
       success: false,
       message: "Terjadi kesalahan server saat memperbarui data pengguna.",
+    };
+  }
+}
+
+/**
+ * 5. Mencari identitas pelanggan berdasarkan ID Pelanggan (IDPEL) untuk auto-fill form manual.
+ */
+export async function lookupPelangganAction(
+  idPelanggan: string
+): Promise<LookupPelangganResult> {
+  await requireRole(["ADMIN"]);
+
+  const cleanedId =
+    typeof idPelanggan === "string"
+      ? idPelanggan.replace(/\s+/g, "").trim()
+      : "";
+
+  if (!cleanedId) {
+    return { found: false };
+  }
+
+  try {
+    const pelanggan = await prisma.pelanggan.findUnique({
+      where: { idPelanggan: cleanedId },
+      select: {
+        idPelanggan: true,
+        namaPelanggan: true,
+        alamat: true,
+        tarif: true,
+        daya: true,
+        kodeUnit: true,
+      },
+    });
+
+    if (!pelanggan) {
+      return { found: false };
+    }
+
+    return {
+      found: true,
+      pelanggan,
+    };
+  } catch (error) {
+    console.error("[lookupPelangganAction] Error:", error);
+    return { found: false };
+  }
+}
+
+/**
+ * 6. Menambahkan data pelanggan & piutang secara manual (melengkapi impor Excel TUL III-09).
+ * Menegakkan aturan duplikasi unik (idPelanggan + periode), validasi petugas aktif,
+ * status rekonsiliasi UNASSIGNED vs BELUM_TERTAGIH, serta pencatatan AuditLog.
+ */
+export async function createPiutangManualAction(
+  input: CreatePiutangManualInput
+): Promise<CreatePiutangManualResult> {
+  const session = await requireRole(["ADMIN"]);
+
+  const parsed = createPiutangManualSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error:
+        parsed.error.issues[0]?.message ??
+        "Data pelanggan dan piutang tidak valid.",
+    };
+  }
+
+  const {
+    idPelanggan,
+    namaPelanggan,
+    alamat,
+    tarif,
+    daya,
+    kodeUnit,
+    periode,
+    jumlahLembar,
+    nilaiTagihan,
+    idPetugas,
+  } = parsed.data;
+
+  try {
+    // 1. Cek duplikasi unik (idPelanggan + periode) agar tidak menimpa data berjalan
+    const existingPiutang = await prisma.piutang.findUnique({
+      where: {
+        unik_pelanggan_periode: {
+          idPelanggan,
+          periode,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existingPiutang) {
+      return {
+        success: false,
+        error:
+          "Data piutang untuk ID Pelanggan tersebut pada periode ini sudah terdaftar.",
+      };
+    }
+
+    // 2. Verifikasi petugas aktif apabila idPetugas diisi
+    let validPetugas: { id: number; username: string; nama: string } | null =
+      null;
+
+    if (idPetugas !== null) {
+      validPetugas = await prisma.pengguna.findFirst({
+        where: {
+          id: idPetugas,
+          peran: "PETUGAS",
+          isActive: true,
+        },
+        select: {
+          id: true,
+          username: true,
+          nama: true,
+        },
+      });
+
+      if (!validPetugas) {
+        return {
+          success: false,
+          error:
+            "Petugas penagihan yang dipilih tidak ditemukan atau sedang nonaktif.",
+        };
+      }
+    }
+
+    // 3. Penegakan aturan bisnis Status Rekonsiliasi (UNASSIGNED vs BELUM_TERTAGIH)
+    const hasKodeUnit = Boolean(kodeUnit && kodeUnit.trim().length > 0);
+    const assignedPetugasId =
+      hasKodeUnit && validPetugas ? validPetugas.id : null;
+    const statusRekonsiliasi: StatusRekonsiliasi =
+      assignedPetugasId !== null && hasKodeUnit
+        ? "BELUM_TERTAGIH"
+        : "UNASSIGNED";
+
+    // 4. Jalankan upsert pelanggan, create piutang, dan pencatatan AuditLog dalam satu transaksi
+    await prisma.$transaction(async (tx) => {
+      await tx.pelanggan.upsert({
+        where: { idPelanggan },
+        create: {
+          idPelanggan,
+          namaPelanggan,
+          alamat,
+          tarif,
+          daya,
+          kodeUnit,
+        },
+        update: {
+          namaPelanggan,
+          alamat,
+          tarif,
+          daya,
+          kodeUnit,
+        },
+      });
+
+      const piutang = await tx.piutang.create({
+        data: {
+          idPelanggan,
+          idPetugas: assignedPetugasId,
+          periode,
+          jumlahLembar,
+          nilaiTagihan,
+          statusRekonsiliasi,
+        },
+      });
+
+      await createAuditLog(
+        {
+          idPengguna: session.user.id,
+          entitas: "PIUTANG",
+          idRekaman: String(piutang.id),
+          aksi: "CREATE_MANUAL",
+          nilaiBaru: {
+            idPelanggan,
+            namaPelanggan,
+            periode,
+            jumlahLembar,
+            nilaiTagihan,
+            idPetugas: assignedPetugasId,
+            kodeUnit,
+            statusRekonsiliasi,
+          },
+        },
+        tx
+      );
+    });
+
+    revalidatePath("/admin/piutang");
+    revalidatePath("/admin/anomali");
+    revalidatePath("/admin");
+    revalidatePath("/pimpinan");
+    revalidatePath("/pimpinan/piutang");
+    revalidatePath("/petugas");
+
+    const message =
+      statusRekonsiliasi === "UNASSIGNED"
+        ? `Data piutang ${idPelanggan} (${periode}) berhasil disimpan dengan status UNASSIGNED dan masuk ke Antrean Koreksi Admin.`
+        : `Data piutang ${idPelanggan} (${periode}) berhasil disimpan dan ditugaskan ke ${validPetugas?.nama ?? "petugas"} (@${validPetugas?.username ?? "-"}).`;
+
+    return {
+      success: true,
+      statusRekonsiliasi,
+      message,
+    };
+  } catch (error) {
+    console.error("[createPiutangManualAction] Error:", error);
+    return {
+      success: false,
+      error: "Terjadi kesalahan server saat menyimpan data piutang manual.",
     };
   }
 }

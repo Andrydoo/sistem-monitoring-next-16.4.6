@@ -17,7 +17,7 @@ export default async function PetugasPiutangDetailPage({
 
   if (!/^\d+$/.test(id.trim())) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="mx-auto max-w-lg rounded-md border border-slate-200 bg-white p-5 shadow-xs">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-amber-200 bg-amber-50 text-amber-800">
             <FileWarning className="h-5 w-5" strokeWidth={1.75} />
@@ -34,7 +34,7 @@ export default async function PetugasPiutangDetailPage({
         </div>
         <Link
           href="/petugas"
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700 sm:w-auto"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
           <span>Kembali ke Daftar Tugas</span>
@@ -84,7 +84,7 @@ export default async function PetugasPiutangDetailPage({
 
   if (!piutang) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="mx-auto max-w-lg rounded-md border border-slate-200 bg-white p-5 shadow-xs">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-amber-200 bg-amber-50 text-amber-800">
             <FileWarning className="h-5 w-5" strokeWidth={1.75} />
@@ -101,7 +101,7 @@ export default async function PetugasPiutangDetailPage({
         </div>
         <Link
           href="/petugas"
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700 sm:w-auto"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
           <span>Kembali ke Daftar Tugas</span>
@@ -113,7 +113,7 @@ export default async function PetugasPiutangDetailPage({
   // Isolasi RBAC Halaman: JANGAN kirim atau tampilkan data pelanggan milik petugas lain
   if (piutang.idPetugas !== session.user.id) {
     return (
-      <div className="rounded-md border border-red-200 bg-white p-5 shadow-xs">
+      <div className="mx-auto max-w-lg rounded-md border border-red-200 bg-white p-5 shadow-xs">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-700">
             <ShieldAlert className="h-5 w-5" strokeWidth={1.75} />
@@ -131,7 +131,7 @@ export default async function PetugasPiutangDetailPage({
         </div>
         <Link
           href="/petugas"
-          className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
+          className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700 sm:w-auto"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
           <span>Kembali ke Daftar Tugas</span>

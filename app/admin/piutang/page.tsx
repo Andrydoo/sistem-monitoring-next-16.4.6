@@ -16,6 +16,8 @@ import {
   AdminPiutangClient,
   type PiutangAdminRow,
 } from "@/components/admin/piutang-client";
+import { TambahPiutangDialog } from "@/components/admin/tambah-piutang-dialog";
+import { ExportPiutangButton } from "@/components/shared/export-piutang-button";
 import { ReminderPriorityBanner } from "@/components/shared/reminder-priority-banner";
 
 const PAGE_SIZE = 20;
@@ -206,11 +208,14 @@ export default async function AdminPiutangPage({
   }));
 
   const periodeList = distinctPeriodeRows.map((r) => r.periode);
+  const activePetugasOptions = daftarPetugas
+    .filter((p) => p.isActive)
+    .map(({ id, nama, username }) => ({ id, nama, username }));
 
   return (
     <div className="space-y-5">
       {/* Header Halaman */}
-      <div className="flex flex-col justify-between gap-4 rounded-md border border-slate-200 bg-white p-5 shadow-xs sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-4 rounded-md border border-slate-200 bg-white p-5 shadow-xs lg:flex-row lg:items-center">
         <div className="flex items-start gap-3.5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-sky-600">
             <FileSpreadsheet className="h-5 w-5" strokeWidth={1.75} />
@@ -229,7 +234,17 @@ export default async function AdminPiutangPage({
           </div>
         </div>
 
-        <div className="shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <TambahPiutangDialog
+            petugasList={activePetugasOptions}
+            defaultPeriode={periode !== "ALL" ? periode : undefined}
+          />
+          <ExportPiutangButton
+            periode={periode}
+            petugas={petugas}
+            status={status}
+            q={q}
+          />
           <EvaluateRemindersButton />
         </div>
       </div>
