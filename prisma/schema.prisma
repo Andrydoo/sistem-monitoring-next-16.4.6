@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PeranPengguna {
+  ADMIN
+  PIMPINAN
+  PETUGAS
+}
+
+enum StatusRekonsiliasi {
+  UNASSIGNED
+  BELUM_TERTAGIH
+  MASA_JANJI_BAYAR
+  OVERDUE
+  DITINDAKLANJUTI
+  KLAIM_LAPANGAN
+  LUNAS_RESMI
+}
+
+enum KategoriPelanggan {
+  KENDALI_PETUGAS
+  DI_LUAR_KENDALI_PETUGAS
+}
+
+enum BentukPenyelesaian {
+  LUNAS_ONLINE
+  TITIP_LUNAS
+  DIPUTUS
+  JANJI_BAYAR
+}
+
+enum RentangJanjiBayar {
+  TGL_1_5
+  TGL_6_10
+  TGL_11_15
+  TGL_16_20
+  DI_ATAS_20
+}
+
+enum JenisEvidence {
+  PENYAMPAIAN
+  PEMUTUSAN
+}
+
+enum StatusPengingat {
+  AKTIF
+  OVERDUE
+  SELESAI
+}
+
+model Pengguna {
+  id               Int              @id @default(autoincrement())
+  username         String           @unique @db.VarChar(50)
+  nama             String           @db.VarChar(150)
+  passwordHash     String           @map("password_hash") @db.VarChar(255)
+  peran            PeranPengguna    @default(PETUGAS)
+  kodeUnit         String?          @map("kode_unit") @db.VarChar(10)
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  piutangDitangani Piutang[]
+  penagihanDiinput Penagihan[]
+  kinerjaBulanan   KinerjaPetugas[]
+  auditLogs        AuditLog[]
+
+  @@map("pengguna")
+}
+
+model Pelanggan {
+  idPelanggan   String    @id @map("id_pelanggan") @db.VarChar(20)
+  namaPelanggan String    @map("nama_pelanggan") @db.VarChar(150)
+  alamat        String    @db.Text
+  tarif         String    @db.VarChar(10)
+  daya          Int
+  kodeUnit      String?   @map("kode_unit") @db.VarChar(10)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  daftarPiutang Piutang[]
+
+  @@index([namaPelanggan])
+  @@map("pelanggan")
+}
+
+model Piutang {
+  id                 Int                @id @default(autoincrement())
+  idPelanggan        String             @map("id_pelanggan") @db.VarChar(20)
+  idPetugas          Int?               @map("id_petugas")
+  periode            String             @db.VarChar(7)
+  jumlahLembar       Int                @map("jumlah_lembar")
+  nilaiTagihan       BigInt             @map("nilai_tagihan")
+  statusRekonsiliasi StatusRekonsiliasi @default(BELUM_TERTAGIH) @map("status_rekonsiliasi")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  pelanggan          Pelanggan          @relation(fields: [idPelanggan], references: [idPelanggan], onDelete: Cascade)
+  petugas            Pengguna?          @relation(fields: [idPetugas], references: [id], onDelete: SetNull)
+  riwayatPenagihan   Penagihan[]
+
+  @@unique([idPelanggan, periode], name: "unik_pelanggan_periode")
+  @@index([periode, idPetugas, statusRekonsiliasi])
+  @@map("piutang")
+}
+
+model Penagihan {
+  id                 Int                @id @default(autoincrement())
+  idPiutang          Int                @map("id_piutang")
+  idPetugas          Int                @map("id_petugas")
+  kategoriPelanggan  KategoriPelanggan  @map("kategori_pelanggan")
+  catatanKendala     String?            @map("catatan_kendala") @db.Text
+  bentukPenyelesaian BentukPenyelesaian @map("bentuk_penyelesaian")
+  rentangJanjiBayar  RentangJanjiBayar? @map("rentang_janji_bayar")
+  latitude           Decimal?           @db.Decimal(10, 7)
+  longitude          Decimal?           @db.Decimal(10, 7)
+  alasanKendalaGps   String?            @map("alasan_kendala_gps") @db.Text
+  waktuInput         DateTime           @default(now()) @map("waktu_input")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  piutang            Piutang            @relation(fields: [idPiutang], references: [id], onDelete: Cascade)
+  petugas            Pengguna           @relation(fields: [idPetugas], references: [id], onDelete: Restrict)
+  daftarEvidence     Evidence[]
+  pengingat          Pengingat?
+
+  @@index([idPiutang, waktuInput])
+  @@map("penagihan")
+}
+
+model Evidence {
+  id            Int           @id @default(autoincrement())
+  idPenagihan   Int           @map("id_penagihan")
+  jenisEvidence JenisEvidence @map("jenis_evidence")
+  filePath      String        @map("file_path") @db.VarChar(255)
+  fileSizeKb    Int?          @map("file_size_kb")
+  uploadedAt    DateTime      @default(now()) @map("uploaded_at")
+
+  penagihan     Penagihan     @relation(fields: [idPenagihan], references: [id], onDelete: Cascade)
+
+  @@map("evidence")
+}
+
+model KinerjaPetugas {
+  id                       Int      @id @default(autoincrement())
+  idPetugas                Int      @map("id_petugas")
+  periode                  String   @db.VarChar(7)
+  saldoAkhirPeriode        BigInt   @default(0) @map("saldo_akhir_periode")
+  saldoAkhirBulan          BigInt   @default(0) @map("saldo_akhir_bulan")
+  rpPelunasanPlnMobile     BigInt   @default(0) @map("rp_pelunasan_pln_mobile")
+  kaliTransaksiPlnMobile   Int      @default(0) @map("kali_transaksi_pln_mobile")
+  perolehanMigrasiPrabayar Int      @default(0) @map("perolehan_migrasi_prabayar")
+  perolehanPromoTematik    Int      @default(0) @map("perolehan_promo_tematik")
+  pelunasanSaldoPrr        BigInt   @default(0) @map("pelunasan_saldo_prr")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  petugas                  Pengguna @relation(fields: [idPetugas], references: [id], onDelete: Cascade)
+
+  @@unique([idPetugas, periode], name: "unik_kinerja_petugas_periode")
+  @@index([periode])
+  @@map("kinerja_petugas")
+}
+
+model Pengingat {
+  id                  Int             @id @default(autoincrement())
+  idPenagihan         Int             @unique @map("id_penagihan")
+  tanggalMulaiRentang DateTime        @map("tanggal_mulai_rentang") @db.Date
+  tanggalJatuhTempo   DateTime        @map("tanggal_jatuh_tempo") @db.Date
+  statusPengingat     StatusPengingat @default(AKTIF) @map("status_pengingat")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  penagihan           Penagihan       @relation(fields: [idPenagihan], references: [id], onDelete: Cascade)
+
+  @@index([statusPengingat, tanggalJatuhTempo])
+  @@map("pengingat")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  idPengguna Int      @map("id_pengguna")
+  entitas    String   @db.VarChar(50)
+  idRekaman  String   @map("id_rekaman") @db.VarChar(50)
+  aksi       String   @db.VarChar(30)
+  nilaiLama  Json?    @map("nilai_lama")
+  nilaiBaru  Json?    @map("nilai_baru")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  pengguna   Pengguna @relation(fields: [idPengguna], references: [id], onDelete: Restrict)
+
+  @@index([entitas, idRekaman])
+  @@map("audit_log")
+}
